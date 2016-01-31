@@ -101,11 +101,9 @@ public class MainActivity extends AppCompatActivity implements
     // Network code
     private void fetchData(String orderBy) {
         String url = Constants.BASE_URL;
-        url += "?sort_by=";
-        url += orderBy;
+        url += "?sort_by=" + orderBy;
         url += "&";
-        url += "api_key=";
-        url += Keys.API_KEY;
+        url += "api_key=" + Keys.API_KEY;
 
         OkHttpClient client = new OkHttpClient();
         Request request = new Request.Builder()
@@ -153,6 +151,5 @@ public class MainActivity extends AppCompatActivity implements
 
             movies.add(movie);
         }
-        Log.d(TAG, "Data population complete!");
     }
 }
