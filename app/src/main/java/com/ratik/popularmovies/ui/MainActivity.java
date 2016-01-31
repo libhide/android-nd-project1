@@ -9,13 +9,20 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.widget.AdapterView;
 import android.widget.Spinner;
+import android.widget.Toast;
 
 import com.ratik.popularmovies.R;
 import com.ratik.popularmovies.adapters.SortOrderSpinnerAdapter;
+import com.ratik.popularmovies.helpers.Constants;
+import com.ratik.popularmovies.helpers.NetworkUtils;
+import com.ratik.popularmovies.network.ApiClient;
 
 import java.util.Arrays;
 
-public class MainActivity extends AppCompatActivity {
+public class MainActivity extends AppCompatActivity implements
+        AdapterView.OnItemSelectedListener {
+
+    private Spinner sortBySpinner;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -23,6 +30,20 @@ public class MainActivity extends AppCompatActivity {
         setContentView(R.layout.activity_main);
 
         // Toolbar + Spinner setup
+        initToolbar();
+
+        // Check if network is available
+        if (NetworkUtils.isNetworkAvailable(this)) {
+            // YES, do the network call!
+            sortBySpinner.setSelection(0);
+        } else {
+            // NO, show toast
+            Toast.makeText(this, getString(R.string.network_unavailable_message),
+                    Toast.LENGTH_LONG).show();
+        }
+    }
+
+    private void initToolbar() {
         Toolbar toolbar = (Toolbar) findViewById(R.id.toolbar);
         setSupportActionBar(toolbar);
 
@@ -35,29 +56,28 @@ public class MainActivity extends AppCompatActivity {
         SortOrderSpinnerAdapter spinnerAdapter = new SortOrderSpinnerAdapter(this);
         spinnerAdapter.addItems(Arrays.asList(getResources().getStringArray(R.array.order_by_values)));
 
-        Spinner spinner = (Spinner) spinnerContainer.findViewById(R.id.toolbar_spinner);
-        spinner.setAdapter(spinnerAdapter);
+        sortBySpinner = (Spinner) spinnerContainer.findViewById(R.id.toolbar_spinner);
+        sortBySpinner.setAdapter(spinnerAdapter);
 
-        spinner.setOnItemSelectedListener(new AdapterView.OnItemSelectedListener() {
-            @Override
-            public void onItemSelected(AdapterView<?> parent, View view, int position, long id) {
-                switch (position) {
-                    case 0:
-                        // Popular movies
-                        break;
-                    case 1:
-                        // Top-rated movies
-                        break;
-                }
-            }
+        sortBySpinner.setOnItemSelectedListener(this);
+    }
 
-            @Override
-            public void onNothingSelected(AdapterView<?> parent) {
+    @Override
+    public void onItemSelected(AdapterView<?> parent, View view, int position, long id) {
+        switch (position) {
+            case 0:
+                // Popular movies
+                ApiClient.getMovieData(Constants.ORDER_BY_POPULARITY);
+                break;
+            case 1:
+                // Top-rated movies
+                ApiClient.getMovieData(Constants.ORDER_BY_VOTES);
+                break;
+        }
+    }
 
-            }
-        });
-        spinner.setSelection(0);
-
-        // ...
+    @Override
+    public void onNothingSelected(AdapterView<?> parent) {
+        // Not implemented
     }
 }
