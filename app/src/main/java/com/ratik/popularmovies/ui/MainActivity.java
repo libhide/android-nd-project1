@@ -4,6 +4,7 @@ import android.os.Bundle;
 import android.support.v7.app.ActionBar;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.Toolbar;
+import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -11,18 +12,34 @@ import android.widget.AdapterView;
 import android.widget.Spinner;
 import android.widget.Toast;
 
+import com.ratik.popularmovies.Keys;
 import com.ratik.popularmovies.R;
 import com.ratik.popularmovies.adapters.SortOrderSpinnerAdapter;
+import com.ratik.popularmovies.data.Movie;
 import com.ratik.popularmovies.helpers.Constants;
+import com.ratik.popularmovies.helpers.ErrorUtils;
 import com.ratik.popularmovies.helpers.NetworkUtils;
-import com.ratik.popularmovies.network.ApiClient;
 
+import org.json.JSONArray;
+import org.json.JSONException;
+import org.json.JSONObject;
+
+import java.io.IOException;
+import java.util.ArrayList;
 import java.util.Arrays;
+
+import okhttp3.Call;
+import okhttp3.Callback;
+import okhttp3.OkHttpClient;
+import okhttp3.Request;
+import okhttp3.Response;
 
 public class MainActivity extends AppCompatActivity implements
         AdapterView.OnItemSelectedListener {
 
+    private static final String TAG = MainActivity.class.getSimpleName();
     private Spinner sortBySpinner;
+    private ArrayList<Movie> movies;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -67,11 +84,11 @@ public class MainActivity extends AppCompatActivity implements
         switch (position) {
             case 0:
                 // Popular movies
-                ApiClient.getMovieData(Constants.ORDER_BY_POPULARITY);
+                fetchData(Constants.ORDER_BY_POPULARITY);
                 break;
             case 1:
                 // Top-rated movies
-                ApiClient.getMovieData(Constants.ORDER_BY_VOTES);
+                fetchData(Constants.ORDER_BY_VOTES);
                 break;
         }
     }
@@ -79,5 +96,63 @@ public class MainActivity extends AppCompatActivity implements
     @Override
     public void onNothingSelected(AdapterView<?> parent) {
         // Not implemented
+    }
+
+    // Network code
+    private void fetchData(String orderBy) {
+        String url = Constants.BASE_URL;
+        url += "?sort_by=";
+        url += orderBy;
+        url += "&";
+        url += "api_key=";
+        url += Keys.API_KEY;
+
+        OkHttpClient client = new OkHttpClient();
+        Request request = new Request.Builder()
+                .url(url)
+                .build();
+
+        Call call = client.newCall(request);
+        call.enqueue(new Callback() {
+            @Override
+            public void onFailure(Call call, IOException e) {
+                // Preventing failure by taking steps prior to the
+                // network call
+            }
+
+            @Override
+            public void onResponse(Call call, Response response) throws IOException {
+                try {
+                    String jsonData = response.body().string();
+                    if (response.isSuccessful()) {
+                        getMovieData(jsonData);
+                    } else {
+                        ErrorUtils.showGenericError(MainActivity.this);
+                    }
+                } catch (IOException | JSONException e) {
+                    Log.e(TAG, "Exception caught:", e);
+                }
+            }
+        });
+    }
+
+    // Populates movies data object
+    private void getMovieData(String jsonData) throws JSONException {
+        JSONObject moviesObject = new JSONObject(jsonData);
+        JSONArray moviesArray = moviesObject.getJSONArray("results");
+        movies = new ArrayList<>();
+        for (int i = 0; i < moviesArray.length(); i++) {
+            JSONObject movieObject = moviesArray.getJSONObject(i);
+
+            Movie movie = new Movie();
+            movie.setTitle(movieObject.getString(Constants.MOVIE_TITLE));
+            movie.setReleaseDate(movieObject.getString(Constants.MOVIE_RELEASE_DATE));
+            movie.setPoster(movieObject.getString(Constants.MOVIE_POSTER));
+            movie.setVoteAverage(movieObject.getString(Constants.MOVIE_VOTE_AVERAGE));
+            movie.setPlot(movieObject.getString(Constants.MOVIE_PLOT));
+
+            movies.add(movie);
+        }
+        Log.d(TAG, "Data population complete!");
     }
 }

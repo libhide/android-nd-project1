@@ -10,5 +10,11 @@ public class Constants {
     public static final String ORDER_BY_POPULARITY = "popularity.desc";
     public static final String ORDER_BY_VOTES = "vote_average.desc";
 
-    // ...
+    // Movie features constants
+    public static final String MOVIE_TITLE = "title";
+    public static final String MOVIE_RELEASE_DATE = "release_date";
+    public static final String MOVIE_POSTER = "poster_path";
+    public static final String MOVIE_VOTE_AVERAGE = "vote_average";
+    public static final String MOVIE_PLOT = "overview";
+
 }

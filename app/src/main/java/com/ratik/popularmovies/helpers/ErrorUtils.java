@@ -10,7 +10,7 @@ import com.ratik.popularmovies.R;
  */
 public class ErrorUtils {
 
-    private void showGenericError(Context context) {
+    public static void showGenericError(Context context) {
         AlertDialog.Builder builder = new AlertDialog.Builder(context);
         builder.setTitle(context.getString(R.string.generic_error_title))
                 .setMessage(context.getString(R.string.generic_error_message))
