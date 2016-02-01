@@ -16,12 +16,12 @@ import java.util.ArrayList;
 /**
  * Created by Ratik on 01/02/16.
  */
-public class MoviesGridAdapter extends BaseAdapter {
+public class MoviesAdapter extends BaseAdapter {
 
     private Context context;
     private ArrayList<Movie> movies;
 
-    public MoviesGridAdapter(Context context, ArrayList<Movie> movies) {
+    public MoviesAdapter(Context context, ArrayList<Movie> movies) {
         this.context = context;
         this.movies = movies;
     }

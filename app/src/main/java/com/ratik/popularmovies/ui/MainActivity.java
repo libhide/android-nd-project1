@@ -1,6 +1,7 @@
 package com.ratik.popularmovies.ui;
 
 import android.os.Bundle;
+import android.support.v4.widget.SwipeRefreshLayout;
 import android.support.v7.app.ActionBar;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.Toolbar;
@@ -15,7 +16,7 @@ import android.widget.Toast;
 
 import com.ratik.popularmovies.Keys;
 import com.ratik.popularmovies.R;
-import com.ratik.popularmovies.adapters.MoviesGridAdapter;
+import com.ratik.popularmovies.adapters.MoviesAdapter;
 import com.ratik.popularmovies.adapters.SortOrderSpinnerAdapter;
 import com.ratik.popularmovies.data.Movie;
 import com.ratik.popularmovies.helpers.Constants;
@@ -45,10 +46,11 @@ public class MainActivity extends AppCompatActivity implements
     // Views
     private GridView moviesView;
     private Spinner sortBySpinner;
+    private SwipeRefreshLayout refreshLayout;
 
     // Data
     private ArrayList<Movie> movies;
-    private MoviesGridAdapter adapter;
+    private MoviesAdapter adapter;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -62,11 +64,30 @@ public class MainActivity extends AppCompatActivity implements
 
         // Views init
         moviesView = (GridView) findViewById(R.id.moviesView);
-        adapter = new MoviesGridAdapter(MainActivity.this, movies);
+        adapter = new MoviesAdapter(MainActivity.this, movies);
         moviesView.setAdapter(adapter);
         moviesView.setOnItemClickListener(this);
 
-        // .
+        refreshLayout = (SwipeRefreshLayout) findViewById(R.id.refreshLayout);
+        refreshLayout.setColorSchemeColors(
+                R.color.colorPrimary,
+                R.color.colorPrimaryDark,
+                R.color.colorAccent
+        );
+
+        refreshLayout.setOnRefreshListener(new SwipeRefreshLayout.OnRefreshListener() {
+            @Override
+            public void onRefresh() {
+                movies.clear();
+                adapter.notifyDataSetChanged();
+                int selectedCategory = sortBySpinner.getSelectedItemPosition();
+                if (selectedCategory == 0) {
+                    fetchData(Constants.ORDER_BY_POPULARITY);
+                } else {
+                    fetchData(Constants.ORDER_BY_VOTES);
+                }
+            }
+        });
 
         // Check if network is available
         if (NetworkUtils.isNetworkAvailable(this)) {
@@ -100,6 +121,7 @@ public class MainActivity extends AppCompatActivity implements
 
     @Override
     public void onItemSelected(AdapterView<?> parent, View view, int position, long id) {
+        refreshLayout.setRefreshing(true);
         switch (position) {
             case 0:
                 // Popular movies
@@ -147,6 +169,7 @@ public class MainActivity extends AppCompatActivity implements
                             @Override
                             public void run() {
                                 adapter.notifyDataSetChanged();
+                                refreshLayout.setRefreshing(false);
                             }
                         });
                     } else {
