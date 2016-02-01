@@ -9,11 +9,13 @@ import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.AdapterView;
+import android.widget.GridView;
 import android.widget.Spinner;
 import android.widget.Toast;
 
 import com.ratik.popularmovies.Keys;
 import com.ratik.popularmovies.R;
+import com.ratik.popularmovies.adapters.MoviesGridAdapter;
 import com.ratik.popularmovies.adapters.SortOrderSpinnerAdapter;
 import com.ratik.popularmovies.data.Movie;
 import com.ratik.popularmovies.helpers.Constants;
@@ -35,19 +37,36 @@ import okhttp3.Request;
 import okhttp3.Response;
 
 public class MainActivity extends AppCompatActivity implements
-        AdapterView.OnItemSelectedListener {
+        AdapterView.OnItemSelectedListener, AdapterView.OnItemClickListener {
 
+    // Constants
     private static final String TAG = MainActivity.class.getSimpleName();
+
+    // Views
+    private GridView moviesView;
     private Spinner sortBySpinner;
+
+    // Data
     private ArrayList<Movie> movies;
+    private MoviesGridAdapter adapter;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
 
+        movies = new ArrayList<>();
+
         // Toolbar + Spinner setup
         initToolbar();
+
+        // Views init
+        moviesView = (GridView) findViewById(R.id.moviesView);
+        adapter = new MoviesGridAdapter(MainActivity.this, movies);
+        moviesView.setAdapter(adapter);
+        moviesView.setOnItemClickListener(this);
+
+        // .
 
         // Check if network is available
         if (NetworkUtils.isNetworkAvailable(this)) {
@@ -124,6 +143,12 @@ public class MainActivity extends AppCompatActivity implements
                     String jsonData = response.body().string();
                     if (response.isSuccessful()) {
                         getMovieData(jsonData);
+                        runOnUiThread(new Runnable() {
+                            @Override
+                            public void run() {
+                                adapter.notifyDataSetChanged();
+                            }
+                        });
                     } else {
                         ErrorUtils.showGenericError(MainActivity.this);
                     }
@@ -136,9 +161,9 @@ public class MainActivity extends AppCompatActivity implements
 
     // Populates movies data object
     private void getMovieData(String jsonData) throws JSONException {
+        movies.clear();
         JSONObject moviesObject = new JSONObject(jsonData);
         JSONArray moviesArray = moviesObject.getJSONArray("results");
-        movies = new ArrayList<>();
         for (int i = 0; i < moviesArray.length(); i++) {
             JSONObject movieObject = moviesArray.getJSONObject(i);
 
@@ -151,5 +176,10 @@ public class MainActivity extends AppCompatActivity implements
 
             movies.add(movie);
         }
+    }
+
+    @Override
+    public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
+        Toast.makeText(this, movies.get(position).getTitle(), Toast.LENGTH_SHORT).show();
     }
 }
