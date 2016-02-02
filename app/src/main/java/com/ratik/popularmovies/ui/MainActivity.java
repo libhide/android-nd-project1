@@ -44,6 +44,7 @@ public class MainActivity extends AppCompatActivity implements
     // Constants
     private static final String TAG = MainActivity.class.getSimpleName();
     public static final String MOVIE_DATA = "movie_data";
+    public static final String MOVIES_DATA = "movies_data";
 
     // Views
     private GridView moviesView;
@@ -59,10 +60,15 @@ public class MainActivity extends AppCompatActivity implements
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
 
-        movies = new ArrayList<>();
-
         // Toolbar + Spinner setup
         initToolbar();
+
+        movies = new ArrayList<>();
+        if (savedInstanceState != null) {
+            movies = (ArrayList<Movie>) savedInstanceState.getSerializable(MOVIES_DATA);
+        } else {
+            getDataFromTheInterwebz();
+        }
 
         // Views init
         moviesView = (GridView) findViewById(R.id.moviesView);
@@ -91,15 +97,6 @@ public class MainActivity extends AppCompatActivity implements
             }
         });
 
-        // Check if network is available
-        if (NetworkUtils.isNetworkAvailable(this)) {
-            // YES, do the network call!
-            sortBySpinner.setSelection(0);
-        } else {
-            // NO, show toast
-            Toast.makeText(this, getString(R.string.network_unavailable_message),
-                    Toast.LENGTH_LONG).show();
-        }
     }
 
     private void initToolbar() {
@@ -141,7 +138,19 @@ public class MainActivity extends AppCompatActivity implements
         // Not implemented
     }
 
-    // Network code
+    // Data fetch helper
+    private void getDataFromTheInterwebz() {
+        // Check if network is available
+        if (NetworkUtils.isNetworkAvailable(this)) {
+            // YES, do the network call!
+            sortBySpinner.setSelection(0);
+        } else {
+            // NO, show toast
+            Toast.makeText(this, getString(R.string.network_unavailable_message),
+                    Toast.LENGTH_LONG).show();
+        }
+    }
+
     private void fetchData(String orderBy) {
         String url = Constants.BASE_URL;
         url += "?sort_by=" + orderBy;
@@ -209,5 +218,13 @@ public class MainActivity extends AppCompatActivity implements
         Intent intent = new Intent(MainActivity.this, DetailActivity.class);
         intent.putExtra(MOVIE_DATA, movies.get(position));
         startActivity(intent);
+    }
+
+    // Activity life cycle overrides
+    @Override
+    protected void onSaveInstanceState(Bundle outState) {
+        super.onSaveInstanceState(outState);
+        Log.i(TAG, "Saving state");
+        outState.putSerializable(MOVIES_DATA, movies);
     }
 }
