@@ -7,4 +7,6 @@
     <string name="vote_average_header_text">VOTE AVERAGE</string>
     <string name="vote_average_placeholder">%s / 10</string>
     <string name="overview_header_text">SYNOPSIS</string>
+    <string name="action_refresh">Refresh</string>
+    <string name="action_settings">Settings</string>
 </resources>

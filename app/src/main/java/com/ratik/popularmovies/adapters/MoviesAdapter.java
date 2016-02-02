@@ -57,6 +57,8 @@ public class MoviesAdapter extends BaseAdapter {
 
         Picasso.with(context).load(movies.get(position).getPoster())
                 .into(viewHolder.posterImageView);
+        viewHolder.posterImageView.setContentDescription(movies.get(position).getTitle() +
+                "poster");
 
         return convertView;
     }

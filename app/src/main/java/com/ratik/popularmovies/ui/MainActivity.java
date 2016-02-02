@@ -2,16 +2,19 @@ package com.ratik.popularmovies.ui;
 
 import android.content.Intent;
 import android.os.Bundle;
-import android.support.v4.widget.SwipeRefreshLayout;
 import android.support.v7.app.ActionBar;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.Toolbar;
 import android.util.Log;
 import android.view.LayoutInflater;
+import android.view.Menu;
+import android.view.MenuInflater;
+import android.view.MenuItem;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.AdapterView;
 import android.widget.GridView;
+import android.widget.ProgressBar;
 import android.widget.Spinner;
 import android.widget.Toast;
 
@@ -49,7 +52,7 @@ public class MainActivity extends AppCompatActivity implements
     // Views
     private GridView moviesView;
     private Spinner sortBySpinner;
-    private SwipeRefreshLayout refreshLayout;
+    private ProgressBar progressBar;
 
     // Data
     private ArrayList<Movie> movies;
@@ -63,6 +66,8 @@ public class MainActivity extends AppCompatActivity implements
         // Toolbar + Spinner setup
         initToolbar();
 
+        progressBar = (ProgressBar) findViewById(R.id.progressBar);
+
         movies = new ArrayList<>();
         if (savedInstanceState != null) {
             movies = (ArrayList<Movie>) savedInstanceState.getSerializable(MOVIES_DATA);
@@ -75,28 +80,6 @@ public class MainActivity extends AppCompatActivity implements
         adapter = new MoviesAdapter(MainActivity.this, movies);
         moviesView.setAdapter(adapter);
         moviesView.setOnItemClickListener(this);
-
-        refreshLayout = (SwipeRefreshLayout) findViewById(R.id.refreshLayout);
-        refreshLayout.setColorSchemeColors(
-                R.color.colorPrimary,
-                R.color.colorPrimaryDark,
-                R.color.colorAccent
-        );
-
-        refreshLayout.setOnRefreshListener(new SwipeRefreshLayout.OnRefreshListener() {
-            @Override
-            public void onRefresh() {
-                movies.clear();
-                adapter.notifyDataSetChanged();
-                int selectedCategory = sortBySpinner.getSelectedItemPosition();
-                if (selectedCategory == 0) {
-                    fetchData(Constants.ORDER_BY_POPULARITY);
-                } else {
-                    fetchData(Constants.ORDER_BY_VOTES);
-                }
-            }
-        });
-
     }
 
     private void initToolbar() {
@@ -120,7 +103,9 @@ public class MainActivity extends AppCompatActivity implements
 
     @Override
     public void onItemSelected(AdapterView<?> parent, View view, int position, long id) {
-        refreshLayout.setRefreshing(true);
+        movies.clear();
+        adapter.notifyDataSetChanged();
+        progressBar.setVisibility(View.VISIBLE);
         switch (position) {
             case 0:
                 // Popular movies
@@ -180,7 +165,7 @@ public class MainActivity extends AppCompatActivity implements
                             @Override
                             public void run() {
                                 adapter.notifyDataSetChanged();
-                                refreshLayout.setRefreshing(false);
+                                progressBar.setVisibility(View.INVISIBLE);
                             }
                         });
                     } else {
@@ -220,11 +205,37 @@ public class MainActivity extends AppCompatActivity implements
         startActivity(intent);
     }
 
-    // Activity life cycle overrides
     @Override
     protected void onSaveInstanceState(Bundle outState) {
         super.onSaveInstanceState(outState);
-        Log.i(TAG, "Saving state");
         outState.putSerializable(MOVIES_DATA, movies);
+    }
+
+    @Override
+    public boolean onCreateOptionsMenu(Menu menu) {
+        MenuInflater menuInflater = getMenuInflater();
+        menuInflater.inflate(R.menu.menu_main, menu);
+        return super.onCreateOptionsMenu(menu);
+    }
+
+    @Override
+    public boolean onOptionsItemSelected(MenuItem item) {
+        switch (item.getItemId()) {
+            case R.id.settings:
+                // TODO: settings
+                break;
+            case R.id.refresh:
+                movies.clear();
+                adapter.notifyDataSetChanged();
+                progressBar.setVisibility(View.VISIBLE);
+                int selectedCategory = sortBySpinner.getSelectedItemPosition();
+                if (selectedCategory == 0) {
+                    fetchData(Constants.ORDER_BY_POPULARITY);
+                } else {
+                    fetchData(Constants.ORDER_BY_VOTES);
+                }
+                break;
+        }
+        return super.onOptionsItemSelected(item);
     }
 }

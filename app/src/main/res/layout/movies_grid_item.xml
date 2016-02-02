@@ -4,6 +4,7 @@
     android:id="@+id/posterImageView"
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
-    tools:src="@drawable/dummy_poster"
+    android:adjustViewBounds="true"
     android:scaleType="fitXY"
-    android:adjustViewBounds="true"/>
+    tools:src="@drawable/dummy_poster"
+    tools:ignore="ContentDescription" />
