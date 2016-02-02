@@ -71,7 +71,7 @@ public class Movie implements Parcelable {
 
     public String getPoster() {
         String basePath = "http://image.tmdb.org/t/p";
-        String posterWidth = PosterWidths.MEDIUM.toString();
+        String posterWidth = PosterWidths.LARGE.toString();
         return basePath + posterWidth + poster;
     }
 

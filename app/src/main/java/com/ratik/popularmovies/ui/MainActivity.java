@@ -1,5 +1,6 @@
 package com.ratik.popularmovies.ui;
 
+import android.content.Intent;
 import android.os.Bundle;
 import android.support.v4.widget.SwipeRefreshLayout;
 import android.support.v7.app.ActionBar;
@@ -42,6 +43,7 @@ public class MainActivity extends AppCompatActivity implements
 
     // Constants
     private static final String TAG = MainActivity.class.getSimpleName();
+    public static final String MOVIE_DATA = "movie_data";
 
     // Views
     private GridView moviesView;
@@ -201,8 +203,11 @@ public class MainActivity extends AppCompatActivity implements
         }
     }
 
+    // Click listener for movie item
     @Override
     public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
-        Toast.makeText(this, movies.get(position).getTitle(), Toast.LENGTH_SHORT).show();
+        Intent intent = new Intent(MainActivity.this, DetailActivity.class);
+        intent.putExtra(MOVIE_DATA, movies.get(position));
+        startActivity(intent);
     }
 }
