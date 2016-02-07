@@ -55,10 +55,15 @@ public class MoviesAdapter extends BaseAdapter {
             viewHolder = (ViewHolder) convertView.getTag();
         }
 
-        Picasso.with(context).load(movies.get(position).getPoster())
-                .into(viewHolder.posterImageView);
-        viewHolder.posterImageView.setContentDescription(movies.get(position).getTitle() +
-                "poster");
+        String posterPath = movies.get(position).getPoster();
+        if (!posterPath.isEmpty()) {
+            Picasso.with(context).load(movies.get(position).getPosterUrl())
+                    .into(viewHolder.posterImageView);
+            viewHolder.posterImageView.setContentDescription(movies.get(position).getTitle() +
+                    "poster");
+        } else {
+            viewHolder.posterImageView.setImageResource(R.drawable.error_poster);
+        }
 
         return convertView;
     }

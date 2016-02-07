@@ -31,10 +31,6 @@ public class Movie implements Parcelable {
             name = s;
         }
 
-        public boolean equalsName(String otherName) {
-            return (otherName != null) && name.equals(otherName);
-        }
-
         public String toString() {
             return this.name;
         }
@@ -69,7 +65,7 @@ public class Movie implements Parcelable {
         this.releaseDate = releaseDate;
     }
 
-    public String getPoster() {
+    public String getPosterUrl() {
         String basePath = "http://image.tmdb.org/t/p";
         String posterWidth = PosterWidths.LARGE.toString();
         return basePath + posterWidth + poster;
@@ -77,6 +73,9 @@ public class Movie implements Parcelable {
 
     public void setPoster(String poster) {
         this.poster = poster;
+    }
+    public String getPoster() {
+        return poster;
     }
 
     public String getVoteAverage() {

@@ -63,19 +63,25 @@ public class MainActivity extends AppCompatActivity implements
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
 
+        progressBar = (ProgressBar) findViewById(R.id.progressBar);
+        movies = new ArrayList<>();
+
         // Toolbar + Spinner setup
         initToolbar();
 
-        progressBar = (ProgressBar) findViewById(R.id.progressBar);
-
-        movies = new ArrayList<>();
         if (savedInstanceState != null) {
             movies = (ArrayList<Movie>) savedInstanceState.getSerializable(MOVIES_DATA);
         } else {
-            getDataFromTheInterwebz();
+            if (NetworkUtils.isNetworkAvailable(this)) {
+                // YES, do the network call!
+                fetchData(Constants.ORDER_BY_POPULARITY);
+            } else {
+                // NO, show toast
+                Toast.makeText(this, getString(R.string.network_unavailable_message),
+                        Toast.LENGTH_LONG).show();
+            }
         }
 
-        // Views init
         moviesView = (GridView) findViewById(R.id.moviesView);
         adapter = new MoviesAdapter(MainActivity.this, movies);
         moviesView.setAdapter(adapter);
@@ -123,20 +129,9 @@ public class MainActivity extends AppCompatActivity implements
         // Not implemented
     }
 
-    // Data fetch helper
-    private void getDataFromTheInterwebz() {
-        // Check if network is available
-        if (NetworkUtils.isNetworkAvailable(this)) {
-            // YES, do the network call!
-            sortBySpinner.setSelection(0);
-        } else {
-            // NO, show toast
-            Toast.makeText(this, getString(R.string.network_unavailable_message),
-                    Toast.LENGTH_LONG).show();
-        }
-    }
-
     private void fetchData(String orderBy) {
+        progressBar.setVisibility(View.VISIBLE);
+
         String url = Constants.BASE_URL;
         url += "?sort_by=" + orderBy;
         url += "&";
@@ -201,13 +196,14 @@ public class MainActivity extends AppCompatActivity implements
     @Override
     public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
         Intent intent = new Intent(MainActivity.this, DetailActivity.class);
-        intent.putExtra(MOVIE_DATA, movies.get(position));
+        if (!movies.get(position).getPoster().isEmpty()) {
+            intent.putExtra(MOVIE_DATA, movies.get(position));
+        }
         startActivity(intent);
     }
 
     @Override
     protected void onSaveInstanceState(Bundle outState) {
-        super.onSaveInstanceState(outState);
         outState.putSerializable(MOVIES_DATA, movies);
     }
 
@@ -221,10 +217,10 @@ public class MainActivity extends AppCompatActivity implements
     @Override
     public boolean onOptionsItemSelected(MenuItem item) {
         switch (item.getItemId()) {
-            case R.id.settings:
+            case R.id.action_settings:
                 // TODO: settings
                 break;
-            case R.id.refresh:
+            case R.id.action_refresh:
                 movies.clear();
                 adapter.notifyDataSetChanged();
                 progressBar.setVisibility(View.VISIBLE);

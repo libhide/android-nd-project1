@@ -21,13 +21,23 @@ import com.squareup.picasso.Picasso;
  */
 public class DetailActivity extends AppCompatActivity {
 
+    private Movie movie;
+
     @Override
     protected void onCreate(@Nullable Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_detail);
 
         Intent intent = getIntent();
-        Movie movie = intent.getParcelableExtra(MainActivity.MOVIE_DATA);
+        if (intent.hasExtra(MainActivity.MOVIE_DATA)) {
+            movie = intent.getParcelableExtra(MainActivity.MOVIE_DATA);
+        } else {
+            movie = new Movie();
+            movie.setTitle("");
+            movie.setVoteAverage("");
+            movie.setPlot("");
+            movie.setReleaseDate("");
+        }
 
         // Set the toolbar
         Toolbar toolbar = (Toolbar) findViewById(R.id.toolbar);
@@ -45,7 +55,7 @@ public class DetailActivity extends AppCompatActivity {
         TextView voteAverageTextView = (TextView) findViewById(R.id.voteAverageTextView);
 
         // Fill in data
-        Picasso.with(this).load(movie.getPoster()).into(posterImageView, new Callback() {
+        Picasso.with(this).load(movie.getPosterUrl()).into(posterImageView, new Callback() {
             @Override
             public void onSuccess() {
                 mainProgressBar.setVisibility(View.INVISIBLE);
