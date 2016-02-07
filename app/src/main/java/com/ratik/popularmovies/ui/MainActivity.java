@@ -3,27 +3,22 @@ package com.ratik.popularmovies.ui;
 import android.content.Intent;
 import android.content.res.Configuration;
 import android.os.Bundle;
-import android.support.v7.app.ActionBar;
+import android.os.Parcelable;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.GridLayoutManager;
 import android.support.v7.widget.RecyclerView;
 import android.support.v7.widget.Toolbar;
 import android.util.Log;
-import android.view.LayoutInflater;
 import android.view.Menu;
 import android.view.MenuInflater;
 import android.view.MenuItem;
 import android.view.View;
-import android.view.ViewGroup;
-import android.widget.AdapterView;
 import android.widget.ProgressBar;
-import android.widget.Spinner;
 import android.widget.Toast;
 
 import com.ratik.popularmovies.Keys;
 import com.ratik.popularmovies.R;
 import com.ratik.popularmovies.adapters.MovieAdapter;
-import com.ratik.popularmovies.adapters.SortOrderSpinnerAdapter;
 import com.ratik.popularmovies.data.Movie;
 import com.ratik.popularmovies.helpers.Constants;
 import com.ratik.popularmovies.helpers.ErrorUtils;
@@ -36,7 +31,6 @@ import org.json.JSONObject;
 
 import java.io.IOException;
 import java.util.ArrayList;
-import java.util.Arrays;
 
 import okhttp3.Call;
 import okhttp3.Callback;
@@ -44,36 +38,44 @@ import okhttp3.OkHttpClient;
 import okhttp3.Request;
 import okhttp3.Response;
 
-public class MainActivity extends AppCompatActivity implements
-        AdapterView.OnItemSelectedListener {
+public class MainActivity extends AppCompatActivity {
 
     // Constants
     private static final String TAG = MainActivity.class.getSimpleName();
     public static final String MOVIE_DATA = "movie_data";
     public static final String MOVIES_DATA = "movies_data";
+    private static final String RV_SCROLL_POS = "scroll_position";
 
     // Views
     private RecyclerView moviesView;
-    private Spinner sortBySpinner;
     private ProgressBar progressBar;
 
     // Data
-    private ArrayList<Movie> movies;
+    private ArrayList<Movie> movies = new ArrayList<>();
     private MovieAdapter adapter;
+
+    // Misc
+    private RecyclerView.LayoutManager layoutManager;
+    private Parcelable rvState;
+    private String currentSortType = "popular";
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
 
+        // Toolbar setup
+        Toolbar toolbar = (Toolbar) findViewById(R.id.toolbar);
+        setSupportActionBar(toolbar);
+
+        // Views init
         progressBar = (ProgressBar) findViewById(R.id.progressBar);
-        movies = new ArrayList<>();
+        moviesView = (RecyclerView) findViewById(R.id.moviesView);
 
-        // Toolbar + Spinner setup
-        initToolbar();
-
+        // State check
         if (savedInstanceState != null) {
             movies = (ArrayList<Movie>) savedInstanceState.getSerializable(MOVIES_DATA);
+            progressBar.setVisibility(View.INVISIBLE);
         } else {
             if (NetworkUtils.isNetworkAvailable(this)) {
                 // YES, do the network call!
@@ -85,18 +87,17 @@ public class MainActivity extends AppCompatActivity implements
             }
         }
 
-        moviesView = (RecyclerView) findViewById(R.id.moviesView);
+        setupRecyclerView();
+    }
 
-        // use this setting to improve performance if you know that changes
-        // in content do not change the layout size of the RecyclerView
+    private void setupRecyclerView() {
         moviesView.setHasFixedSize(true);
-
         if (getResources().getConfiguration().orientation == Configuration.ORIENTATION_PORTRAIT) {
-            moviesView.setLayoutManager(new GridLayoutManager(this, 2));
+            layoutManager = new GridLayoutManager(this, 2);
         } else {
-            moviesView.setLayoutManager(new GridLayoutManager(this, 4));
+            layoutManager = new GridLayoutManager(this, 4);
         }
-
+        moviesView.setLayoutManager(layoutManager);
         adapter = new MovieAdapter(MainActivity.this, movies);
         moviesView.setAdapter(adapter);
         // Click listener
@@ -114,50 +115,16 @@ public class MainActivity extends AppCompatActivity implements
         );
     }
 
-    private void initToolbar() {
-        Toolbar toolbar = (Toolbar) findViewById(R.id.toolbar);
-        setSupportActionBar(toolbar);
-
-        View spinnerContainer = LayoutInflater.from(this).inflate(R.layout.toolbar_spinner,
-                toolbar, false);
-        ActionBar.LayoutParams lp = new ActionBar.LayoutParams(
-                ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT);
-        toolbar.addView(spinnerContainer, lp);
-
-        SortOrderSpinnerAdapter spinnerAdapter = new SortOrderSpinnerAdapter(this);
-        spinnerAdapter.addItems(Arrays.asList(getResources().getStringArray(R.array.order_by_values)));
-
-        sortBySpinner = (Spinner) spinnerContainer.findViewById(R.id.toolbar_spinner);
-        sortBySpinner.setAdapter(spinnerAdapter);
-
-        sortBySpinner.setOnItemSelectedListener(this);
-    }
-
     @Override
-    public void onItemSelected(AdapterView<?> parent, View view, int position, long id) {
-        movies.clear();
-        adapter.notifyDataSetChanged();
-        progressBar.setVisibility(View.VISIBLE);
-        switch (position) {
-            case 0:
-                // Popular movies
-                fetchData(Constants.ORDER_BY_POPULARITY);
-                break;
-            case 1:
-                // Top-rated movies
-                fetchData(Constants.ORDER_BY_VOTES);
-                break;
+    protected void onResume() {
+        super.onResume();
+        if (rvState != null) {
+            layoutManager.onRestoreInstanceState(rvState);
         }
-    }
-
-    @Override
-    public void onNothingSelected(AdapterView<?> parent) {
-        // Not implemented
     }
 
     private void fetchData(String orderBy) {
         progressBar.setVisibility(View.VISIBLE);
-
         String url = Constants.BASE_URL;
         url += "?sort_by=" + orderBy;
         url += "&";
@@ -219,7 +186,16 @@ public class MainActivity extends AppCompatActivity implements
     }
 
     @Override
+    protected void onRestoreInstanceState(Bundle savedInstanceState) {
+        if (savedInstanceState != null) {
+            movies = (ArrayList<Movie>) savedInstanceState.getSerializable(MOVIES_DATA);
+            rvState = savedInstanceState.getParcelable(RV_SCROLL_POS);
+        }
+    }
+
+    @Override
     protected void onSaveInstanceState(Bundle outState) {
+        outState.putParcelable(RV_SCROLL_POS, layoutManager.onSaveInstanceState());
         outState.putSerializable(MOVIES_DATA, movies);
     }
 
@@ -233,15 +209,17 @@ public class MainActivity extends AppCompatActivity implements
     @Override
     public boolean onOptionsItemSelected(MenuItem item) {
         switch (item.getItemId()) {
-            case R.id.action_settings:
-                // TODO: settings
+            case R.id.action_popular:
+                currentSortType = "popular";
+                fetchData(Constants.ORDER_BY_POPULARITY);
+                break;
+            case R.id.action_top_rated:
+                currentSortType = "top";
+                fetchData(Constants.ORDER_BY_VOTES);
                 break;
             case R.id.action_refresh:
-                movies.clear();
-                adapter.notifyDataSetChanged();
                 progressBar.setVisibility(View.VISIBLE);
-                int selectedCategory = sortBySpinner.getSelectedItemPosition();
-                if (selectedCategory == 0) {
+                if (currentSortType.equals("top")) {
                     fetchData(Constants.ORDER_BY_POPULARITY);
                 } else {
                     fetchData(Constants.ORDER_BY_VOTES);

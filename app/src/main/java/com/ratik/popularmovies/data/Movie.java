@@ -21,23 +21,8 @@ public class Movie implements Parcelable {
     private String voteAverage;
     private String plot;
 
-    private enum PosterWidths {
-        MEDIUM("/w185"),
-        LARGE("/w342");
-
-        private final String name;
-
-        PosterWidths(String s) {
-            name = s;
-        }
-
-        public String toString() {
-            return this.name;
-        }
-    }
-
     public Movie() {
-
+        // Empty Constructor
     }
 
     public String getTitle() {
@@ -67,7 +52,8 @@ public class Movie implements Parcelable {
 
     public String getPosterUrl() {
         String basePath = "http://image.tmdb.org/t/p";
-        String posterWidth = PosterWidths.LARGE.toString();
+        String posterWidth = "/w342";
+
         return basePath + posterWidth + poster;
     }
 
