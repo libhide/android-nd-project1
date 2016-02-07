@@ -1,9 +1,12 @@
 package com.ratik.popularmovies.ui;
 
 import android.content.Intent;
+import android.content.res.Configuration;
 import android.os.Bundle;
 import android.support.v7.app.ActionBar;
 import android.support.v7.app.AppCompatActivity;
+import android.support.v7.widget.GridLayoutManager;
+import android.support.v7.widget.RecyclerView;
 import android.support.v7.widget.Toolbar;
 import android.util.Log;
 import android.view.LayoutInflater;
@@ -13,19 +16,19 @@ import android.view.MenuItem;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.AdapterView;
-import android.widget.GridView;
 import android.widget.ProgressBar;
 import android.widget.Spinner;
 import android.widget.Toast;
 
 import com.ratik.popularmovies.Keys;
 import com.ratik.popularmovies.R;
-import com.ratik.popularmovies.adapters.MoviesAdapter;
+import com.ratik.popularmovies.adapters.MovieAdapter;
 import com.ratik.popularmovies.adapters.SortOrderSpinnerAdapter;
 import com.ratik.popularmovies.data.Movie;
 import com.ratik.popularmovies.helpers.Constants;
 import com.ratik.popularmovies.helpers.ErrorUtils;
 import com.ratik.popularmovies.helpers.NetworkUtils;
+import com.ratik.popularmovies.listeners.RecyclerItemClickListener;
 
 import org.json.JSONArray;
 import org.json.JSONException;
@@ -42,7 +45,7 @@ import okhttp3.Request;
 import okhttp3.Response;
 
 public class MainActivity extends AppCompatActivity implements
-        AdapterView.OnItemSelectedListener, AdapterView.OnItemClickListener {
+        AdapterView.OnItemSelectedListener {
 
     // Constants
     private static final String TAG = MainActivity.class.getSimpleName();
@@ -50,13 +53,13 @@ public class MainActivity extends AppCompatActivity implements
     public static final String MOVIES_DATA = "movies_data";
 
     // Views
-    private GridView moviesView;
+    private RecyclerView moviesView;
     private Spinner sortBySpinner;
     private ProgressBar progressBar;
 
     // Data
     private ArrayList<Movie> movies;
-    private MoviesAdapter adapter;
+    private MovieAdapter adapter;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -82,10 +85,33 @@ public class MainActivity extends AppCompatActivity implements
             }
         }
 
-        moviesView = (GridView) findViewById(R.id.moviesView);
-        adapter = new MoviesAdapter(MainActivity.this, movies);
+        moviesView = (RecyclerView) findViewById(R.id.moviesView);
+
+        // use this setting to improve performance if you know that changes
+        // in content do not change the layout size of the RecyclerView
+        moviesView.setHasFixedSize(true);
+
+        if (getResources().getConfiguration().orientation == Configuration.ORIENTATION_PORTRAIT) {
+            moviesView.setLayoutManager(new GridLayoutManager(this, 2));
+        } else {
+            moviesView.setLayoutManager(new GridLayoutManager(this, 4));
+        }
+
+        adapter = new MovieAdapter(MainActivity.this, movies);
         moviesView.setAdapter(adapter);
-        moviesView.setOnItemClickListener(this);
+        // Click listener
+        moviesView.addOnItemTouchListener(new RecyclerItemClickListener(MainActivity.this,
+                        new RecyclerItemClickListener.OnItemClickListener() {
+                            @Override
+                            public void onItemClick(View view, int position) {
+                                Intent intent = new Intent(MainActivity.this, DetailActivity.class);
+                                if (!movies.get(position).getPoster().isEmpty()) {
+                                    intent.putExtra(MOVIE_DATA, movies.get(position));
+                                }
+                                startActivity(intent);
+                            }
+                        })
+        );
     }
 
     private void initToolbar() {
@@ -190,16 +216,6 @@ public class MainActivity extends AppCompatActivity implements
 
             movies.add(movie);
         }
-    }
-
-    // Click listener for movie item
-    @Override
-    public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
-        Intent intent = new Intent(MainActivity.this, DetailActivity.class);
-        if (!movies.get(position).getPoster().isEmpty()) {
-            intent.putExtra(MOVIE_DATA, movies.get(position));
-        }
-        startActivity(intent);
     }
 
     @Override
